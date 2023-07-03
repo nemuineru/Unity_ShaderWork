@@ -1,4 +1,4 @@
-Shader"NemukeIndustry/ToneMap"
+Shader"NemukeIndustry/ToneMap_FIix"
 {
     Properties
     {
@@ -95,7 +95,7 @@ v2f vert(appdata v)
     
     // apply fog
     UNITY_APPLY_FOG(i.fogCoord, col);
-    return col * XLight;
+    return  SqrtLight;
 
 }
             //Set End of rendering.
