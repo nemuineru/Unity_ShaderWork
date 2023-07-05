@@ -8,11 +8,10 @@ Shader"NemukeIndustry/Lighting"
     {
 
         Tags { "RenderType" = "Opaque" }
-        LOD 100
     
-//まず、頂点ライティング・球面調和のライティングを行っている.
+        //まず、頂点ライティング・球面調和のライティングを行っている.
         Pass
-{
+        {
         
         Tags {  "LightMode"="ForwardBase" }
 
@@ -27,19 +26,19 @@ Shader"NemukeIndustry/Lighting"
 
 struct appdata
 {
-    float4 vertex : POSITION;
+    float4 vertex : POSITION0;
     float2 uv : TEXCOORD0;
-    float3 normal : NORMAL0;
+    float3 normal : NORMAL;
 };
 
 struct v2f
 {
     float4 vertex : SV_POSITION;
     float2 uv : TEXCOORD0;
-    float4 diff : COLOR0;
     float3 normal : TEXCOORD1;
     half3 ambient : TEXCOORD2;
     half3 worldPos : TEXCOORD3;
+    float4 diff : COLOR0;
     //ライティングに必要なメンバ値をv2f構造体として定義する. 
     LIGHTING_COORDS(4,5)
 };
@@ -54,34 +53,75 @@ half4 _LightColor0;
 v2f vert(appdata v)
 {
     v2f o = (v2f) 0;
+    
+    
+    o.vertex = UnityObjectToClipPos(v.vertex);
+    o.uv = TRANSFORM_TEX(v.uv,_MainTex);
+    o.normal = UnityObjectToWorldNormal(v.normal);
+    o.worldPos = mul(unity_ObjectToWorld, v.vertex);
+
+    //シャドウサンプラを設定する。
+    //頂点シェーダが設定されているなら
+               #if UNITY_SHOULD_SAMPLE_SH
+
+                   #if defined(VERTEXLIGHT_ON)
+    
+    //unityビルトインのライトポジション数(デフォルトで４)
+
+                        o.ambient = Shade4PointLights(
+                            unity_4LightPosX0, unity_4LightPosY0, unity_4LightPosZ0,
+                            unity_LightColor[0].rgb, unity_LightColor[1].rgb,
+                            unity_LightColor[2].rgb, unity_LightColor[3].rgb,
+                            unity_4LightAtten0, o.worldPos, o.normal
+                        );
+
+                   #endif
+
+                    o.ambient += max(0, ShadeSH9(float4(o.normal, 1)));
+               #else
+
+                o.ambient = 0;
+
+    #endif
 
     return o;
 }
 
-        ENDCG
+fixed4 frag(v2f i) : SV_Target
+{
+                half4 col = tex2D(_MainTex, i.uv);
+
+                // AutoLightに定義されているマクロで減衰を計算する
+                UNITY_LIGHT_ATTENUATION(attenuation, i, i.normal);
+                half3 diff = max(0, dot(i.normal, _WorldSpaceLightPos0.xyz)) * _LightColor0 * attenuation;
+                col.rgb *= diff + i.ambient;
+                return col;
+}
+ENDCG        
 }
 
+
+
 //その後、複数ライトを扱うバージョンをpass2に書く.
-        Pass
-        {
+        Pass    {
         Tags {  "LightMode"="ForwardAdd" }
+
+        Blend One One
+        ZWrite Off
+
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
-            // make fog work
            #pragma multi_compile_fwdadd
 
             #include "UnityCG.cginc"
-            #include "UnityLightingCommon.cginc" 
-            #include "Lighting.cginc"
             #include "AutoLight.cginc"
-
 
 struct appdata
 {
     float4 vertex : POSITION;
     float2 uv : TEXCOORD0;
-    float3 normal : NORMAL0;
+    float3 normal : NORMAL;
 };
 
 struct v2f
@@ -92,23 +132,25 @@ struct v2f
     half3 ambient : TEXCOORD2;
     half3 worldPos : TEXCOORD3;
     float4 vertex : SV_POSITION;
+    LIGHTING_COORDS(4, 5)  
 };
 
 sampler2D _MainTex;
 float4 _MainTex_ST;
+half4 _LightColor0;
 
 v2f vert(appdata v)
 {
     //アウトプット用に変数宣言.
-    v2f o = (v2f)0;
+    v2f o = (v2f) 0;
     o.vertex = UnityObjectToClipPos(v.vertex);
     //TRANSFORM_TEXはUnityのタイリングなどをハンドラしてくれるマクロ.
     o.uv = TRANSFORM_TEX(v.uv, _MainTex);
     //ワールド空間上での頂点法線
     o.normal = UnityObjectToWorldNormal(v.normal);
     //ワールド空間上での頂点位置.
-    o.worldPos = mul(unity_ObjectToWorld,v.vertex);
-    half nl = max(0, dot(o.normal,_WorldSpaceLightPos0.xyz));
+    o.worldPos = mul(unity_ObjectToWorld, v.vertex);
+    half nl = max(0, dot(o.normal, _WorldSpaceLightPos0.xyz));
     //カラーディヒュージョン設定.
     o.diff = nl * _LightColor0;
     return o;
@@ -126,16 +168,17 @@ v2f vert(appdata v)
     }
     else
     {
-        lightDir = _WorldSpaceLightPos0;
+        lightDir = _WorldSpaceLightPos0.xyz;
     }
     lightDir = normalize(lightDir);
     UNITY_LIGHT_ATTENUATION(attenuation, i, i.normal);
-    half3 diff = max(0, dot(i.normal, lightDir)) * i.diff * attenuation;
+    half3 diff = max(0, dot(i.normal, lightDir)) * _LightColor0 * attenuation;
     col.rgb *= diff;
     
-    return col ;
+    return col;
 }
             ENDCG
         }
+
     }
 }
