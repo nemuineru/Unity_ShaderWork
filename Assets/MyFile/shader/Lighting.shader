@@ -32,7 +32,7 @@ struct appdata
 };
 
 struct v2f
-{
+{   
     float4 vertex : SV_POSITION;
     float2 uv : TEXCOORD0;
     float3 normal : TEXCOORD1;
