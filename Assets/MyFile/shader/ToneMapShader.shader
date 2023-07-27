@@ -69,9 +69,9 @@ v2f vert(appdata v)
             fixed4 frag(v2f i) : SV_Target
 {
     float2 pos = i.vertex.xy;
-            //ライト強さを描写..
+            //???C?g??????`??..
     float Light = max(0, dot(i.normal, _WorldSpaceLightPos0.xyz)) * 1.0;
-            //整数領域下でのライト..
+            //????????????C?g..
     float SqrtLight = max(0, dot(floor(i.normal * _Toneset) / _Toneset, _WorldSpaceLightPos0.xyz)) * 1.0;
     float ColThread_1 = 0.01f;
     float ColThread_2 = 0.3f;

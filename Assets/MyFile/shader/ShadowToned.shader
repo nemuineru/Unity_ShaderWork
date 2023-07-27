@@ -1,4 +1,4 @@
-Shader"NemukeIndustry/Lighting"
+Shader"NemukeIndustry/ShadowToned"
 {
     Properties
     {
@@ -39,12 +39,14 @@ Shader"NemukeIndustry/Lighting"
                 half3 ambient : TEXCOORD2;
                 half3 worldPos : TEXCOORD3;
                 float4 diff : COLOR0;
+                float4 screenPos : TexCoord4;
                 //ライティングに必要なメンバ値をv2f構造体として定義する. 
                 LIGHTING_COORDS(4,5)
             };
 
             //maintexの値を設定..
             sampler2D _MainTex;
+            float _ShadowToneSize;
             half4 _MainTex_ST;
             //ライトカラー..
             half4 _LightColor0;
@@ -54,14 +56,14 @@ Shader"NemukeIndustry/Lighting"
             {
                 v2f o = (v2f) 0;
                 
-                
                 o.vertex = UnityObjectToClipPos(v.vertex);
                 o.uv = TRANSFORM_TEX(v.uv,_MainTex);
                 o.normal = UnityObjectToWorldNormal(v.normal);
                 o.worldPos = mul(unity_ObjectToWorld, v.vertex);
+                o.screenPos = ComputeScreenPos(o.vertex);
 
                 //シャドウサンプラを設定する。
-            //頂点シェーダが設定されているなら
+                //頂点シェーダが設定されているなら
                 #if UNITY_SHOULD_SAMPLE_SH
 
                 #if defined(VERTEXLIGHT_ON)
@@ -90,11 +92,26 @@ Shader"NemukeIndustry/Lighting"
         fixed4 frag(v2f i) : SV_Target
         {
                     half4 col = tex2D(_MainTex, i.uv);
+                    //テクスチャのカラー設定..
+
+
+                    float2 screenPos = i.screenPos.xy / i.screenPos.w;
+                    float2 screenResl2 = float2(max(1.0, _ScreenParams.x / _ScreenParams.y),
+                    max(1.0 , _ScreenParams.y / _ScreenParams.x));
+                    float2 cellsize = float2(_ShadowToneSize,_ShadowToneSize) * screenResl2;
+
+                    //オブジェクトのローカルポジション..
+                    float3 ObjLPos = i.worldPos - mul(unity_ObjectToWorld, float4(0,0,0,1)).xyz;
+
+                    float ObjCameraDist = distance(ObjLPos , _WorldSpaceCameraPos);
+
+                    screenPos *= cellsize * ObjCameraDist;
+                    screenPos = frac(screenPos);
 
                     // AutoLightに定義されているマクロで減衰を計算する
                     UNITY_LIGHT_ATTENUATION(attenuation, i, i.normal);
                     half3 diff = max(0, dot(i.normal, _WorldSpaceLightPos0.xyz)) * _LightColor0 * attenuation;
-                    col.rgb *= diff + i.ambient;
+                    col.rgb *= half3(screenPos.x,screenPos.y,0);//diff + i.ambient;
                     return col;
         }
     ENDCG        
@@ -102,7 +119,7 @@ Shader"NemukeIndustry/Lighting"
 
 
 
-//その後、複数ライトを扱うバージョンをpass2に書く.
+    //その後、複数ライトを扱うバージョンをpass2に書く.
     Pass{
         Tags {  "LightMode"="ForwardAdd" }
 
