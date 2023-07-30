@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Shader 2
-  m_Shader: {fileID: 4800000, guid: cfd363bc284b344498d5578db6df6786, type: 3}
+  m_Shader: {fileID: 4800000, guid: f59715dabb47e6c4b9de910a38441915, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -45,7 +45,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
-        m_Texture: {fileID: 2800000, guid: 75c719c08a15173458dbb517c22b032f, type: 3}
+        m_Texture: {fileID: 2800000, guid: 638a705c28c8ad644a2437d28c2c2001, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetallicGlossMap:
@@ -64,6 +64,10 @@ Material:
         m_Texture: {fileID: 2800000, guid: 5cee8c7b86a627b40944f60a924b6257, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _ToneTex:
+        m_Texture: {fileID: 2800000, guid: ad35d8126e5a8244f9a29742f4c12484, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
     - _BlockSize: 10
@@ -75,6 +79,7 @@ Material:
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1
+    - _HalfToneScale: 0.02
     - _Metallic: 0
     - _Mode: 0
     - _OcclusionStrength: 1
@@ -82,6 +87,9 @@ Material:
     - _Pixelation: 70
     - _SD: 10
     - _ShadowSize: 8
+    - _ShadowToneLength: 2.07
+    - _ShadowToneSize: 5.23
+    - _ShadowToneStrength: 0.76
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1

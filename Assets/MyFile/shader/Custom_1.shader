@@ -80,7 +80,7 @@ v2f vert(appdata v)
     max(1.0 , _ScreenParams.y / _ScreenParams.x));
     //projects Screen UV. 
     float2 posUV = float2(i.Spos.x / i.Spos.w * screenResl2.x, i.Spos.y / i.Spos.w * screenResl2.y);
-    float4 SCol = tex2D(_SubTex, posUV * _ShadowSize);
+    float4 SCol = tex2D(_SubTex, frac(posUV * _ShadowSize));
     
     // apply fog
     UNITY_APPLY_FOG(i.fogCoord, col);

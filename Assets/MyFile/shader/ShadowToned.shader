@@ -1,9 +1,16 @@
+// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
+
+// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
+
 Shader"NemukeIndustry/ShadowToned"
 {
     Properties
     {
-        _MainTex ("Texture", 2D) = "white" {}
+        _MainTex ("Main Texture", 2D) = "white" {}
+        _ToneTex ("Tone Texrure", 2D) = "white" {}
         _ShadowToneSize ("ShadowToneSize", float) = 0.2
+        _ShadowToneStrength ("Strength", Range(0.0,1.0)) =  0.5
+        _ShadowToneLength ("Length", float) =  0.5
     }
     SubShader
     {
@@ -23,6 +30,7 @@ Shader"NemukeIndustry/ShadowToned"
                 
                 #include "UnityCG.cginc"
                 #include "AutoLight.cginc"
+                #include "./CustomFunction.cginc"
 
     struct appdata
             {
@@ -39,18 +47,20 @@ Shader"NemukeIndustry/ShadowToned"
                 half3 ambient : TEXCOORD2;
                 half3 worldPos : TEXCOORD3;
                 float4 diff : COLOR0;
-                float4 screenPos : TexCoord4;
+                float4 screenPos : COLOR4;
                 //ライティングに必要なメンバ値をv2f構造体として定義する. 
                 LIGHTING_COORDS(4,5)
             };
 
             //maintexの値を設定..
             sampler2D _MainTex;
+            sampler2D _ToneTex;
             float _ShadowToneSize;
+            float _ShadowToneStrength;
+            float _ShadowToneLength;
             half4 _MainTex_ST;
             //ライトカラー..
             half4 _LightColor0;
-
 
             v2f vert(appdata v)
             {
@@ -69,6 +79,7 @@ Shader"NemukeIndustry/ShadowToned"
                 #if defined(VERTEXLIGHT_ON)
                 
                 //unityビルトインのライトポジション数(デフォルトで４)
+                //o.ambientはライト情報.
 
                 o.ambient = Shade4PointLights(
                     unity_4LightPosX0, unity_4LightPosY0, unity_4LightPosZ0,
@@ -91,29 +102,38 @@ Shader"NemukeIndustry/ShadowToned"
 
         fixed4 frag(v2f i) : SV_Target
         {
-                    half4 col = tex2D(_MainTex, i.uv);
-                    //テクスチャのカラー設定..
+            //多分これでセルサイズに応じた区分けが出来るはず..
+            float2 EXscreenPos = ToneMapper(i.screenPos, _ShadowToneSize, i.worldPos);
 
+            // AutoLightに定義されているマクロで光減衰を計算する。
+            UNITY_LIGHT_ATTENUATION(attenuation, i, i.normal);
+            half3 diff = max(0, dot(i.normal, _WorldSpaceLightPos0.xyz)) * _LightColor0 * attenuation;
+            float sdw = diff + i.ambient;
+            
+            float sTonePower = 1 - sdw;
+            
+            bool setTone = true;
 
-                    float2 screenPos = i.screenPos.xy / i.screenPos.w;
-                    float2 screenResl2 = float2(max(1.0, _ScreenParams.x / _ScreenParams.y),
-                    max(1.0 , _ScreenParams.y / _ScreenParams.x));
-                    float2 cellsize = float2(_ShadowToneSize,_ShadowToneSize) * screenResl2;
+            half expandness = pow(sdw / _ShadowToneStrength , (_ShadowToneLength) * 2.0);
+            if(expandness > 2.0)
+            {
+                expandness = expandness * expandness;
+                if(expandness > 16.0)
+                {
+                    setTone = false;
+                }
+            }
+            half2 uv_ex = UvExpander(EXscreenPos,expandness);
+            half4 col = tex2D(_MainTex, i.uv);
+            half4 tone = tex2D(_ToneTex, uv_ex);
 
-                    //オブジェクトのローカルポジション..
-                    float3 ObjLPos = i.worldPos - mul(unity_ObjectToWorld, float4(0,0,0,1)).xyz;
+            //half lz = UVdebugGrid(uv_ex,0.01,half3(1,1,1));
+            if(setTone)
+            col.rgb *= tone;
+            //col.rgb *= (1 - lz) * tone;
+            return col;
 
-                    float ObjCameraDist = distance(ObjLPos , _WorldSpaceCameraPos);
-
-                    screenPos *= cellsize * ObjCameraDist;
-                    screenPos = frac(screenPos);
-
-                    // AutoLightに定義されているマクロで減衰を計算する
-                    UNITY_LIGHT_ATTENUATION(attenuation, i, i.normal);
-                    half3 diff = max(0, dot(i.normal, _WorldSpaceLightPos0.xyz)) * _LightColor0 * attenuation;
-                    col.rgb *= half3(screenPos.x,screenPos.y,0);//diff + i.ambient;
-                    return col;
-        }
+        }            
     ENDCG        
     }
 
@@ -133,6 +153,7 @@ Shader"NemukeIndustry/ShadowToned"
 
             #include "UnityCG.cginc"
             #include "AutoLight.cginc"
+            #include "./CustomFunction.cginc"
 
             struct appdata
             {
@@ -149,11 +170,16 @@ Shader"NemukeIndustry/ShadowToned"
                 half3 ambient : TEXCOORD2;
                 half3 worldPos : TEXCOORD3;
                 float4 vertex : SV_POSITION;
-                LIGHTING_COORDS(4, 5)  
+                float4 screenPos : COLOR4;
+                LIGHTING_COORDS(4,5)
             };
 
             sampler2D _MainTex;
-            float4 _MainTex_ST;
+            sampler2D _ToneTex;
+            float _ShadowToneSize;
+            float _ShadowToneStrength;
+            float _ShadowToneLength;
+            half4 _MainTex_ST;
             half4 _LightColor0;
 
             v2f vert(appdata v)
@@ -167,6 +193,7 @@ Shader"NemukeIndustry/ShadowToned"
                 o.normal = UnityObjectToWorldNormal(v.normal);
                 //ワールド空間上での頂点位置.
                 o.worldPos = mul(unity_ObjectToWorld, v.vertex);
+                o.screenPos = ComputeScreenPos(o.vertex);
                 half nl = max(0, dot(o.normal, _WorldSpaceLightPos0.xyz));
                 //カラーディヒュージョン設定.
                 o.diff = nl * _LightColor0;
@@ -174,9 +201,7 @@ Shader"NemukeIndustry/ShadowToned"
             }
 
             fixed4 frag(v2f i) : SV_Target
-{
-        // sample the texture
-            fixed4 col = tex2D(_MainTex, i.uv);
+        {
             //_WorldSpaceLightPos0.wはディレクショナルライトなら0、それ以外なら1.
             half3 lightDir;
             if (_WorldSpaceLightPos0.w > 0)
@@ -190,10 +215,41 @@ Shader"NemukeIndustry/ShadowToned"
             lightDir = normalize(lightDir);
             UNITY_LIGHT_ATTENUATION(attenuation, i, i.normal);
             half3 diff = max(0, dot(i.normal, lightDir)) * _LightColor0 * attenuation;
-            col.rgb *= diff;
+
+            //多分これでセルサイズに応じた区分けが出来るはず..
+            float2 EXscreenPos = ToneMapper(i.screenPos, _ShadowToneSize, i.worldPos);
+
+            // AutoLightに定義されているマクロで光減衰を計算する
+            float sdw = diff + i.ambient;
+            float sTonePower = 1 - sdw;
+
+            //得られたこのExScreenPosはそのまま使うとチラツキが発生するので..
+            float2 dx = ddx(EXscreenPos);
+            float2 dy = ddy(EXscreenPos);
+
+            bool setTone = true;
+
+            half expandness = pow(sdw / _ShadowToneStrength , (_ShadowToneLength) * 2.0);
+            if(expandness > 2.0)
+            {
+                expandness = expandness * expandness;
+                if(expandness > 16.0)
+                {
+                    setTone = false;
+                }
+            }
+            half2 uv_ex = UvExpander(EXscreenPos,expandness);
+            half4 col = tex2D(_MainTex, i.uv);
+            half4 tone = tex2D(_ToneTex, uv_ex);
+
+            //half lz = UVdebugGrid(uv_ex,0.01,half3(1,1,1));
+            if(setTone)
+            col.rgb *= tone;
+            //col.rgb *= (1 - lz) * tone;
             
             return col;
         }
+
             ENDCG
         }
     }
