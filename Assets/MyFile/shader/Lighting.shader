@@ -12,19 +12,19 @@ Shader"NemukeIndustry/Lighting"
         //まず、頂点ライティング・球面調和のライティングを行っている.
         Pass
         {
-            
+            Name "FWBase"            
             Tags {  "LightMode"="ForwardBase" }
 
-                CGPROGRAM
-                #pragma vertex vert
-                #pragma fragment frag
-                // VERTEXLIGHT_ONなどが定義されたバリアントが生成される
-                #pragma multi_compile_fwdbase
-                
-                #include "UnityCG.cginc"
-                #include "AutoLight.cginc"
+            CGPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            // VERTEXLIGHT_ONなどが定義されたバリアントが生成される
+            #pragma multi_compile_fwdbase
+            
+            #include "UnityCG.cginc"
+            #include "AutoLight.cginc"
 
-    struct appdata
+            struct appdata
             {
                 float4 vertex : POSITION0;
                 float2 uv : TEXCOORD0;
@@ -89,13 +89,13 @@ Shader"NemukeIndustry/Lighting"
 
         fixed4 frag(v2f i) : SV_Target
         {
-                    half4 col = tex2D(_MainTex, i.uv);
+                half4 col = half4(1,1,1,1);
 
-                    // AutoLightに定義されているマクロで減衰を計算する
-                    UNITY_LIGHT_ATTENUATION(attenuation, i, i.normal);
-                    half3 diff = max(0, dot(i.normal, _WorldSpaceLightPos0.xyz)) * _LightColor0 * attenuation;
-                    col.rgb *= diff + i.ambient;
-                    return col;
+                // AutoLightに定義されているマクロで減衰を計算する
+                UNITY_LIGHT_ATTENUATION(attenuation, i, i.normal);
+                half3 diff = max(0, dot(i.normal, _WorldSpaceLightPos0.xyz)) * _LightColor0 * attenuation;
+                col.rgb *= diff + i.ambient;
+                return col;
         }
     ENDCG        
     }
@@ -104,6 +104,7 @@ Shader"NemukeIndustry/Lighting"
 
 //その後、複数ライトを扱うバージョンをpass2に書く.
     Pass{
+        Name "FWAdd"
         Tags {  "LightMode"="ForwardAdd" }
 
         Blend One One
@@ -157,26 +158,26 @@ Shader"NemukeIndustry/Lighting"
             }
 
             fixed4 frag(v2f i) : SV_Target
-{
-        // sample the texture
-            fixed4 col = tex2D(_MainTex, i.uv);
-            //_WorldSpaceLightPos0.wはディレクショナルライトなら0、それ以外なら1.
-            half3 lightDir;
-            if (_WorldSpaceLightPos0.w > 0)
             {
-                lightDir = _WorldSpaceLightPos0.xyz - i.worldPos.xyz;
+                // sample the texture
+                fixed4 col = half4(1,1,1,1);
+                //_WorldSpaceLightPos0.wはディレクショナルライトなら0、それ以外なら1.
+                half3 lightDir;
+                if (_WorldSpaceLightPos0.w > 0)
+                {
+                    lightDir = _WorldSpaceLightPos0.xyz - i.worldPos.xyz;
+                }
+                else
+                {
+                    lightDir = _WorldSpaceLightPos0.xyz;
+                }
+                lightDir = normalize(lightDir);
+                UNITY_LIGHT_ATTENUATION(attenuation, i, i.normal);
+                half3 diff = max(0, dot(i.normal, lightDir)) * _LightColor0 * attenuation;
+                col.rgb *= diff;
+                
+                return col;
             }
-            else
-            {
-                lightDir = _WorldSpaceLightPos0.xyz;
-            }
-            lightDir = normalize(lightDir);
-            UNITY_LIGHT_ATTENUATION(attenuation, i, i.normal);
-            half3 diff = max(0, dot(i.normal, lightDir)) * _LightColor0 * attenuation;
-            col.rgb *= diff;
-            
-            return col;
-        }
             ENDCG
         }
     }

@@ -30,7 +30,7 @@ Shader"NemukeIndustry/ShadowToned"
                 
                 #include "UnityCG.cginc"
                 #include "AutoLight.cginc"
-                #include "./CustomFunction.cginc"
+                #include "./ShadowTone_CustonCGINC/CustomFunction.cginc"
 
     struct appdata
             {
@@ -153,7 +153,7 @@ Shader"NemukeIndustry/ShadowToned"
 
             #include "UnityCG.cginc"
             #include "AutoLight.cginc"
-            #include "./CustomFunction.cginc"
+                #include "./ShadowTone_CustonCGINC/CustomFunction.cginc"
 
             struct appdata
             {

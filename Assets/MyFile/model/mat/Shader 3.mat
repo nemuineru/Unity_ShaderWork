@@ -7,12 +7,13 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Shader
-  m_Shader: {fileID: 4800000, guid: 0f7a96bf5c4c7374893404bbc7c762b3, type: 3}
+  m_Name: Shader 3
+  m_Shader: {fileID: 4800000, guid: 5a32e3ed6af58b147a33c160c32e525f, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
-  m_InvalidKeywords: []
+  m_InvalidKeywords:
+  - _MODE_MOSAIC1_NORMAL
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -63,26 +64,38 @@ Material:
         m_Texture: {fileID: 2800000, guid: 5cee8c7b86a627b40944f60a924b6257, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _ToneTex:
+        m_Texture: {fileID: 2800000, guid: ad35d8126e5a8244f9a29742f4c12484, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - _BlockSize: 10
     - _BumpScale: 1
+    - _Cull: 0
     - _Cutoff: 0.5
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1
+    - _HalfToneScale: 0.02
     - _Metallic: 0
     - _Mode: 0
     - _OcclusionStrength: 1
     - _Parallax: 0.02
-    - _ShadowSize: 7.3
-    - _ShadowToneSize: 0.2
+    - _Pixelation: 70
+    - _Range: 0.59
+    - _SD: 10
+    - _ShadowSize: 8
+    - _ShadowToneLength: 2.07
+    - _ShadowToneSize: 5.23
+    - _ShadowToneStrength: 0.76
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
-    - _Toneset: 3.71
-    - _Tonethread: 0.88
+    - _Toneset: 3.11
+    - _Tonethread: 0.46
     - _UVSec: 0
     - _ZWrite: 1
     m_Colors:
